@@ -4,11 +4,11 @@
 
 #include "riscv_encoding.h"
 #include "platform.h"
-
-#define VIRT_UART 0x10000000
+#include "page.h"
 
 #define MSTATUS_MPP_S (1 << 11)  // MPP=1 (Supervisor)
 #define MSTATUS_SUM   (1 << 18)  // SUM=1
+#define MSTATUS_CLEAN_MPP ~(3 << 11)
 
 #define SET_MEPC_SAFE(addr)                             \
     do {                                                \
@@ -22,6 +22,14 @@
         }                                               \
     } while (0)
 
+extern void panic(const char* msg) __attribute__((noreturn));
+
+extern void setup_mmu(table_t *root);
+extern table_t* init_page();
+extern void init_map(table_t *pte); 
+
+extern uint64_t main();
+
 void putc(char c) {
     *(volatile char*) VIRT_UART = c;
 }
@@ -32,7 +40,6 @@ void puts(char* message) {
   }
 }
 
-extern uint64_t smode_main();
 
 void enter_smode() {
   extern void trap(void);
@@ -40,26 +47,27 @@ void enter_smode() {
   write_csr(mtvec, trap);
   printf("mtvec: 0x%lx \n", read_csr(mtvec));
 
-  write_csr(mie, (1 << 13) | (1 << 12) | (1 << 9) | (1 << 5) | (1 << 3));
+  write_csr(mie, (1 << IRQ_HOST) | (1 << IRQ_COP) | MIP_SEIP | MIP_STIP | MIP_MSIP);
   printf("mie: 0x%lx \n", read_csr(mie));
 
   // === PMP SETTINGS FOR QEMU ===
   // Enable accsess to the all memory: addr = 2^XLEN - 1, A = NAPOT, R/W/X
-  uint64_t pmp_addr = ~0UL >> 2;  // Все биты, кроме двух младших
+  uint64_t pmp_addr = ~0UL >> 2;  // All bits except the two low bits
   write_csr(pmpaddr0, pmp_addr);
   write_csr(pmpcfg0, 0xF); // A=NAPOT (0b11), R=1, W=1, X=1 => 0b1111 = 0xF
   printf("pmpcfg0 = 0x%lx, pmpaddr0 = 0x%lx\n", read_csr(pmpcfg0), read_csr(pmpaddr0));
 
   uint64_t mst = read_csr(mstatus);
-  mst &= ~(3 << 11);      // clean MPP
-  mst |= (1 << 11);       // MPP = S-mode (01)
-  mst |= (1 << 18);       // SUM=1 (S-mode can read/write U-mode memory)
-  mst |= (1 << 3);  
+  mst &= MSTATUS_CLEAN_MPP;      // clean MPP
+  mst |= MSTATUS_MPP_S;   // MPP = S-mode (01)
+  mst |= MSTATUS_SUM;     // SUM=1 (S-mode can read/write U-mode memory)
+  mst |= MSTATUS_MIE;     
 
   write_csr(mstatus, mst);
 
-  SET_MEPC_SAFE(smode_main);
+  SET_MEPC_SAFE(main);
   uint64_t satp = read_csr(satp);
+
   printf("satp = 0x%lx\n", satp);
   printf("enter ro S-mode: mepc=0x%lx, mstatus=0x%lx\n", read_csr(mepc), read_csr(mstatus));
 
@@ -67,10 +75,9 @@ void enter_smode() {
 }
 // Called before main() to get the environment set up and sane.
 
-void main(int argc, char* argv[], char* envp[]) {
-  extern void panic(const char* msg) __attribute__((noreturn));
-  extern void setup_mmu();
+void platform_init() {
   
+
   static int premain_called;
   if (premain_called++) {
     panic("PANIC: _premain called multiple times");
@@ -80,8 +87,17 @@ void main(int argc, char* argv[], char* envp[]) {
   extern char _sbss; // provided by linker script.
   extern char _ebss;
   our_memset(&_sbss, 0, &_ebss - &_sbss);
+  
+  table_t *p_root = init_page();
 
-  setup_mmu();
+  if (!p_root) {
+    panic("root table is NULL");
+    return;
+  }
+
+  init_map(p_root);
+  setup_mmu(p_root);
+
   enter_smode();
 
   //extern void rearm_timer();

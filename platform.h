@@ -5,6 +5,9 @@
   typedef unsigned long long uint64_t;
   typedef long uint32_t;
 #endif
-typedef uint64_t pte_t;
+
+#define NULL ((void*)0) 
+#define VIRT_UART 0x10000000
+
 typedef unsigned char uint8_t;
 typedef signed char int8_t;

@@ -1,5 +1,6 @@
 
 #include "riscv_encoding.h"
+#include "platform.h"
 
 // This isn't really simpler than doing it in the startup code. It's just
 // an example/reminder that you have no libc and tending your startup really
@@ -16,20 +17,10 @@ void* our_memset(void* start, int data, int len) {
 }
 
 static int foreground_count;
-#if ( __riscv_xlen == 64)
-  typedef unsigned long uint64_t;
-  typedef long uint32_t;
-#else
-  typedef unsigned long long uint64_t;
-  typedef long uint32_t;
-#endif
-typedef uint64_t pte_t;
-
 extern void printf(const char* fmt, ...);
 
 __attribute__((aligned(4), noreturn))
-uint64_t smode_main() {
-  printf("enter to smod_main \n");
+uint64_t main() {
   
   // check MMU
   uint64_t satp = read_csr(satp);

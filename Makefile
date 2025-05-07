@@ -16,7 +16,7 @@ CFLAGS += -O3 -g3 -mcmodel=medany -nostdlib -ffreestanding
 # ASFLAGS+=-march=rv32i -mabi=ilp32 -mcmodel=medany
 # LDFLAGS+=-march=rv32i -mabi=ilp32 -mcmodel=medany
 
-OBJS += boot.o timer.o trap.o main.o platform.o debug_print.o riscv_mmu.o printf.o
+OBJS += boot.o timer.o trap.o main.o platform.o debug_print.o riscv_mmu.o printf.o virt_memory.o phy_memory.o page.o
 
 bootimage: Makefile $(OBJS)
 	$(LD) $(LDFLAGS) -T kernel.ld -o bootimage $(OBJS)
