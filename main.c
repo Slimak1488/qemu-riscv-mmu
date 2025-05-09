@@ -1,6 +1,6 @@
 
-#include "riscv_encoding.h"
 #include "platform.h"
+#include "riscv_encoding.h"
 
 // This isn't really simpler than doing it in the startup code. It's just
 // an example/reminder that you have no libc and tending your startup really
@@ -8,15 +8,6 @@
 // This is also so we have an "interesting" loop to look at in the generated
 // assembly.
 
-void* our_memset(void* start, int data, int len) {
-  unsigned char* p = start;
-  while(len--) {
-    *p++ = (unsigned char)data;
-  }
-  return start;
-}
-
-static int foreground_count;
 extern void printf(const char* fmt, ...);
 
 __attribute__((aligned(4), noreturn))

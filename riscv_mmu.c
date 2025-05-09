@@ -3,7 +3,7 @@
 
 extern panic(const char* msg);
 extern puts(char* message);
-extern zsimple_aligned_alloc(uint64_t align, uint64_t size);
+extern table_t* zalloc_pages(int pages);
 extern uint8_t is_leaf(const uint64_t *entry);
 extern uint8_t is_valid(const uint64_t *entry);
 
@@ -63,7 +63,7 @@ int map(table_t *root, uint64_t vaddr, uint64_t paddr, uint64_t bits, uint8_t le
     for (int8_t i = 1; i >= level; i--) {
         printf("map @ level=%d, v=%lx\n", i, v);
         if (!is_valid(v)) {
-            pte_t *page = (pte_t*)zsimple_aligned_alloc(PAGE_SIZE, 1); //entry
+            table_t *page = zalloc_pages(1); //entry
 
             if (!page) return -3;
 
@@ -148,7 +148,7 @@ void page_fault(int cause) {
     printf("PAGE FAULT @ vaddr=0x%lx \n", vaddr_page_fault);
 
     vaddr_page_fault &= ~(PAGE_SIZE - 1);
-    uint64_t *phy_page = (uint64_t*)zsimple_aligned_alloc(PAGE_SIZE, 1);
+    uint64_t *phy_page = (uint64_t*)zalloc_pages(1);
 
     if (!phy_page) {
         panic("!phy_page");

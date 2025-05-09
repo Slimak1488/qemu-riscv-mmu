@@ -82,13 +82,12 @@ void printf(const char* fmt, ...) {
                     break;
                 }
                 case 'l': {
-                    // Обработка long (64-бит)
+                    //long (64-bit)
                     fmt++;
                     if (*fmt == 'x') {
                         unsigned long long num = va_arg(args, unsigned long long);
                         print_hex64(num);
                     } else {
-                        // Неподдерживаемый спецификатор
                         putc('%');
                         putc('l');
                         putc(*fmt);

@@ -10,7 +10,6 @@ struct Table
 };
 
 typedef struct Table table_t;
-typedef uint64_t pte_t;
 
 enum EntryBits {
 	None = 0,

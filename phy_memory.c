@@ -29,7 +29,7 @@ void *simple_malloc(uint64_t size) {
 //
 //}
 
-void *zsimple_aligned_alloc(uint64_t align, uint64_t size) {
+void *aligned_alloc(uint64_t align, uint64_t size) {
     if (cur_heap_ptr == NULL) {
         cur_heap_ptr = __heap_start;
     }

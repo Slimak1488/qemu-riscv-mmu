@@ -40,6 +40,13 @@ void puts(char* message) {
   }
 }
 
+void* our_memset(void* start, int data, int len) {
+  unsigned char* p = start;
+  while(len--) {
+    *p++ = (unsigned char)data;
+  }
+  return start;
+}
 
 void enter_smode() {
   extern void trap(void);
@@ -66,10 +73,11 @@ void enter_smode() {
   write_csr(mstatus, mst);
 
   SET_MEPC_SAFE(main);
-  uint64_t satp = read_csr(satp);
 
-  printf("satp = 0x%lx\n", satp);
-  printf("enter ro S-mode: mepc=0x%lx, mstatus=0x%lx\n", read_csr(mepc), read_csr(mstatus));
+  printf("satp = 0x%lx\n", read_csr(satp));
+
+  printf("enter to S-mode: mepc=0x%lx, mstatus=0x%lx\n",
+                       read_csr(mepc), read_csr(mstatus));
 
   asm volatile ("mret");
 }

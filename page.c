@@ -2,12 +2,31 @@
 
 table_t* root_pte = NULL;
 
-extern void *zsimple_aligned_alloc(uint64_t align, uint64_t size);
+extern void *aligned_alloc(uint64_t align, uint64_t size);
 
+table_t* zalloc_pages(int pages) {
+  if (pages == 0) {
+        panic("alloc_pages: pages == 0\n");
+        return NULL;
+    }
 
-//table_t* page_alloc(int n) {
-//
-//}
+    void* ptr = aligned_alloc(PAGE_SIZE, pages * PAGE_SIZE);
+
+    if (!ptr) {
+        panic("alloc_pages: aligned_alloc failed");
+        return NULL;
+    }
+
+    uint64_t* p = (uint64_t*)ptr;
+    uint64_t n = (pages * PAGE_SIZE) / sizeof(uint64_t);
+
+    for (uint64_t i = 0; i < n; i++) {
+        p[i] = 0;
+    }
+
+    return ptr;
+}
+
 uint8_t is_leaf(const uint64_t *entry) {
   if (*entry & ReadWriteExecute != 0) return 1;
   return 0;
@@ -19,8 +38,7 @@ uint8_t is_valid(const uint64_t *entry) {
 }
 
 table_t* init_page() {
-
-    root_pte = (table_t*)zsimple_aligned_alloc(PAGE_SIZE, PAGE_SIZE);
+    root_pte = zalloc_pages(1);
 
     if (!root_pte) {
         panic("!init_page");
